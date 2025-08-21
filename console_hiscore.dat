@@ -63,9 +63,11 @@ nes,crc32=21e836f7:
 ; ---- codes made by eadmaster
 
 nes,smb:
+nes,Super Mario Bros.:
 nes,Super Mario Bros. (World):
 nes,Super Mario Bros. (W) [!]:
 nes,crc32=d445f698:
+nes,sha1=EA343F4E445A9050D4B4FBAC2C77D0693B1D0922:
 @:maincpu,program,7d7,6,0,0,ff
 
 nes,gunnac:
@@ -272,3 +274,4 @@ pce,crc32=59cdc8d0:
 ; TODO: check also: tg16,Blazing Lazers (U).pce:
 ;tg16,crc32=b4a1b0f6:
 @:maincpu,program,36e,4,00,00
+

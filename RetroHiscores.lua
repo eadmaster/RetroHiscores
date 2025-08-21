@@ -1,12 +1,12 @@
 -- RetroHiscores.lua
 -- by borgar@borgar.net & eadmaster, WTFPL license
 --
--- Port of MAME hiscore plugin to RetroArch
+-- Port of MAME hiscore plugin to RetroArch and BizHawk
 -- https://github.com/eadmaster/RetroHiscores
 --
 local exports = {}
 exports.name = "console_hiscore"
-exports.version = "1.2"
+exports.version = "1.2.1"
 exports.description = "Console Hiscore support"
 exports.license = "WTFPL license"
 exports.author = { name = "borgar@borgar.net & eadmaster" }
@@ -39,7 +39,7 @@ local function read_config()
   local file = io.open( config_path, "r" );
   if file then
 	file:close()
-	emu.print( "console_hiscore: config found" );
+	console.log( "console_hiscore: config found" );
 	local _conf = {}
 	for line in io.lines(config_path) do
 	  -- TODO: skip comments
@@ -93,11 +93,11 @@ end
 
 
 local function read_hiscore_dat (hiscoredata_path)
-  -- emu.print( "hiscore_plugin_path: " .. hiscore_plugin_path );
+  --console.log( "hiscore_plugin_path: " .. hiscore_plugin_path );
   local file = io.open( hiscore_plugin_path .. "/" .. hiscoredata_path, "r" );
   if file == nil then
 	-- file not found
-	emu.print( "hiscore file not found: " .. hiscoredata_path );
+	console.log( "hiscore file not found: " .. hiscoredata_path );
 	return ""
   end
   local rm_match;
@@ -120,11 +120,12 @@ local function read_hiscore_dat (hiscoredata_path)
 	--rm_match = gameinfo.getromname() .. ':';
   --end
   if emu.getsystemid() ~= "" then
-	rm_match = emu.getsystemid() .. "," .. gameinfo.getromname() .. ':';
+	rm_match = string.lower(emu.getsystemid()) .. "," .. gameinfo.getromname() .. ':';
   else
 	rm_match = "nes," .. gameinfo.getromname() .. ':';
   end
-  
+  -- TODO: add hash: gameinfo.getromhash()
+
   local cluster = "";
   local current_is_match = false;
   if file then
@@ -200,14 +201,14 @@ end
 
 
 local function write_scores ( posdata )
-  emu.print("console hiscore: write_scores")
+  console.log("console hiscore: write_scores")
   local output = io.open(get_file_name(), "wb");
   if not output then
 	-- attempt to create the directory, and try again
 	--lfs.mkdir( hiscore_path );
 	output = io.open(get_file_name(), "wb");
   end
-  emu.print("console_hiscore: write_scores output")
+  console.log("console_hiscore: write_scores output")
   if output then
 	for ri,row in ipairs(posdata) do
 	  t = {};
@@ -219,7 +220,7 @@ local function write_scores ( posdata )
 	end
 	output:close();
   end
-  emu.print("console_hiscore: write_scores end")
+  console.log("console_hiscore: write_scores end")
   -- TODO: only show if the file is new?
   --gui.addmessage("hiscores saved")
 end
@@ -262,11 +263,11 @@ local function init()
 	if check_mem( positions ) then
 	  default_checksum = check_scores( positions );
 	  if read_scores( positions ) then
-		emu.print( "console_hiscore: scores read OK" );
+		console.log( "console_hiscore: scores read OK" );
 		gui.addmessage("hiscores loaded")
 	  else
 		-- likely there simply isn't a .hi file around yet
-		emu.print( "console_hiscore: scores read FAIL" );
+		console.log( "console_hiscore: scores read FAIL" );
 	  end
 	  scores_have_been_read = true;
 	  current_checksum = check_scores( positions );
@@ -299,7 +300,7 @@ local function tick ()
 		write_scores( positions );
 		current_checksum = checksum;
 		last_write_time = emu.framecount();
-		emu.print( "SAVE SCORES EVENT!", last_write_time );
+		console.log( "SAVE SCORES EVENT!", last_write_time );
 	  --end
 	end
   end
@@ -323,14 +324,14 @@ function start()
 	mem_check_passed = false
 	scores_have_been_read = false;
 	last_write_time = -10
-	emu.print("Starting " .. gameinfo.getromname())
+	console.log("Starting " .. gameinfo.getromname())
 	--config_read = read_config();
 	local dat = read_hiscore_dat("console_hiscore.dat")
 	if dat and dat ~= "" then
-		emu.print( "console_hiscore: found console_hiscore.dat entry for " .. gameinfo.getromname() );
+		console.log( "console_hiscore: found console_hiscore.dat entry for " .. gameinfo.getromname() );
 		res, positions = pcall(parse_table, dat);
 		if not res then
-			emu.print("console_hiscore: console_hiscore.dat parse error " .. positions);
+			console.log("console_hiscore: console_hiscore.dat parse error " .. positions);
 			return;
 		end
 		for i, row in pairs(positions) do
@@ -355,8 +356,8 @@ while true do
 
 	if not client.ispaused() and (emu.framecount() - last_update) > CPU_SAVER_INTERVAL  then
         
-        last_update = emu.framecount()
-		
+		last_update = emu.framecount()
+
 		if found_hiscore_entry then
 			tick()
 		end
