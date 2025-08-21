@@ -13,7 +13,7 @@ if DEBUG:
 else:
 	logging.getLogger().setLevel(logging.INFO)
 	
-HISCORE_DAT_PATH="/usr/share/games/mame/plugins/hiscore/console_hiscore.dat"
+HISCORE_DAT_PATH=os.path.expandvars("$HOME/.mame/dats/console_hiscore.dat")  # default hiscore path
 if("HISCORE_DAT_PATH" in os.environ):
     HISCORE_DAT_PATH = os.environ['HISCORE_DAT_PATH']
 
@@ -47,6 +47,10 @@ def get_raw_memory_from_statedata(statedata):
 		savegamedata_compressed = statedata[0x18:]  # skip 18 bytes header
 		import zlib
 		statedata = zlib.decompress(savegamedata_compressed)
+		if statedata.startswith(b'RASTATE'):
+			# skip new RA states header
+			# TODO: read the actual RAM size from the header
+			statedata = statedata[16:]
 	# end if
 	
 	# Nestopia
@@ -178,12 +182,13 @@ def get_raw_memory_from_statedata(statedata):
 	
 	# TODO: MAME https://github.com/mamedev/mame/blob/master/src/emu/save.cpp
 	elif statedata.startswith(b'MAMESAVE'):
-		#print("format ver: " + str(statedata[8]))
+		logging.debug("format ver: " + str(statedata[8]))
 		#print("flags: " + str(statedata[9])) # TODO: parse
-		#print("game name: " + str(statedata[0x0A:0x1B], 'utf-8'))
+		logging.debug("game name: " + str(statedata[0x0A:0x1B], 'utf-8'))
 		SYSTEM = (statedata[0x0A:0x1B]).decode().replace('\x00', '')
 		#GAME_NAME = SYSTEM
 		#print("signature: " + str(statedata[0x1C:0x1F]))
+		# TODO: print mame version
 		emulator = "mame"
 		candidate_systems = [ SYSTEM ]
 
@@ -194,7 +199,7 @@ def get_raw_memory_from_statedata(statedata):
 		raw_memoryswapped = zlib.decompress(savegamedata_compressed)
 		
 		# flip data  https://stackoverflow.com/questions/14543065/byte-reverse-ab-cd-to-cd-ab-with-python
-		#raw_memory = bytearray(raw_memory_flipped)
+		#raw_memory = bytearray(raw_memoryswapped)
 		#raw_memory.reverse()
 		
 		#def swap16(x):
@@ -204,10 +209,10 @@ def get_raw_memory_from_statedata(statedata):
 		#	return int.from_bytes(x.to_bytes(4, byteorder='little'), byteorder='big', signed=False)
 		
 		# inplace 16bit swapping  https://stackoverflow.com/questions/36096292/efficient-way-to-swap-bytes-in-python
-		# raw_memory = bytearray()
-		# for i in range(0, len(raw_memoryswapped), 2):
-			# raw_memory.append(raw_memoryswapped[i+1])
-			# raw_memory.append(raw_memoryswapped[i])
+		raw_memory = bytearray()
+		for i in range(0, len(raw_memoryswapped), 2):
+			raw_memory.append(raw_memoryswapped[i+1])
+			raw_memory.append(raw_memoryswapped[i])
 		
 		#print("savegamedata decompressed size: " + str(len(savegamedata)))
 
@@ -220,8 +225,8 @@ def get_raw_memory_from_statedata(statedata):
 		# "the emulator takes a snapshot of the current configuration of all the memory addresses currently in use by the game. This snapshot is unique and loading it back up is just a matter of forcing the memory back to those addresses." https://www.reddit.com/r/emulation/comments/34pk7q/how_do_save_states_work/
 		# https://wiki.mamedev.org/index.php/Save_State_Fundamentals
 		# TODO: raw_memory = raw_memory[???]
-		logging.error("MAME is unsupported, please check the mame_mkhiscoredebugscript.py")
-		return None, None, None
+		#logging.error("MAME is unsupported")
+		#return None, None, None
 		
 	# TODO: more cores
 	
@@ -233,6 +238,9 @@ def get_raw_memory_from_statedata(statedata):
 			raw_memory.append(raw_memoryswapped[i+1])
 			raw_memory.append(raw_memoryswapped[i])
 
+	#raw_memory = statedata
+	#emulator = "drastic"
+	
 	if emulator == None or raw_memory == None:
 		return None, None, None
 	else:
@@ -302,20 +310,20 @@ if __name__ == '__main__':
 
 	raw_memory, candidate_systems, EMU = get_raw_memory_from_statedata(statedata)
 
-	if not EMU:
-		logging.error("emulator not supported")
-		sys.exit(1)
-		
-	logging.info("detected system(s): " + str(candidate_systems))
-	logging.info("detected emulator: " + EMU)
-	logging.info("detected game: " + GAME_NAME)
-
-	if DEBUG:
+	if DEBUG and raw_memory:
 		#OUTFILE_PATH=GAME_NAME + ".mem"
 		OUTFILE_PATH=sys.argv[1] + ".mem"
 		outfile = open(OUTFILE_PATH, "wb")
 		outfile.write(raw_memory)
-	
+		
+	if not EMU or EMU=="mame":
+		logging.error("emulator not supported: " + str(EMU))
+		sys.exit(1)
+		
+	logging.info("detected system(s): " + str(candidate_systems))
+	logging.info("detected emulator: " + str(EMU))
+	logging.info("detected game: " + str(GAME_NAME))
+
 	hiscore_rows_to_process = get_hiscore_rows_from_game(candidate_systems, GAME_NAME)
 	if len(hiscore_rows_to_process)==0:
 		logging.error("nothing found in hiscore.dat for current game")

@@ -15,6 +15,9 @@ HISCORE_PATH_USE_SUBDIRS=False
 
 logging.getLogger().setLevel(logging.DEBUG)
 
+# add to sys.path relative to the current running script    https://stackoverflow.com/questions/8663076/python-best-way-to-add-to-sys-path-relative-to-the-current-running-script
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 from retroarchpythonapi import RetroArchPythonApi
 while True:
 	try:

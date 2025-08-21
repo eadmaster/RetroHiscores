@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """Retroarch Python API
 This is a Python API for the RetroArch /
@@ -115,6 +117,35 @@ class RetroArchPythonApi(object):
         return True
 
 
+    def clear_msgs(self):
+        """ Clear all message shown via the OSD """
+        self._socket.sendto(b'CLEAR_MSG\n', (self._socket_ipaddr, self._socket_portnum))
+        return True
+        
+    def show_overlay_text(self, text, text_position=1):
+        """ Shows an overlay text via the AI service """
+        # https://docs.libretro.com/guides/ai-service/
+        p = { "text": text, "text_position" : 2}
+        import json
+        print(b'SHOW_OVERLAY ' + json.dumps(p).encode('utf-8') + b'\n')
+        self._socket.sendto(b'SHOW_OVERLAY ' + json.dumps(p).encode('utf-8') + b'\n', (self._socket_ipaddr, self._socket_portnum))
+        return True
+    
+    def show_overlay_image(self, img_file_path):
+        """ Shows an overlay image via the AI service """
+        # https://docs.libretro.com/guides/ai-service/
+        img_file_data = open(img_file_path, "rb").read()
+        import base64
+        img_file_base64_str = base64.b64encode(img_file_data).decode()
+        p = { "image": img_file_base64_str }
+        import json
+        self._socket.sendto(b'SHOW_OVERLAY ' + json.dumps(p).encode('utf-8') + b'\n', (self._socket_ipaddr, self._socket_portnum))
+        return True
+        
+    def clear_overlays(self):
+        self._socket.sendto(b'CLEAR_OVERLAY\n', (self._socket_ipaddr, self._socket_portnum))
+        return True
+        
     def get_config_param(self, param_name):
         """ Read a param from the configuration (e.g. 'savefile_directory') """
         # ver. check to avoid freezing
@@ -392,3 +423,18 @@ class RetroArchPythonApi(object):
         return True
 
 
+if __name__ == '__main__':
+	ra = RetroArchPythonApi()
+	prev_content = ""
+	while(True):
+		print(ra.has_content())
+		if ra.has_content():
+			curr_content = ra.get_content_name()
+			if curr_content != prev_content:
+				print("now playing: " + curr_content.decode().strip("\'"))
+				prev_content = curr_content
+		try:
+			time.sleep(5)
+		except KeyboardInterrupt:
+			# clean exit
+			ra.quit()

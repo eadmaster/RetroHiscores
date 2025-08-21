@@ -1,9 +1,18 @@
-This project aims to bring hiscore saving support for emulators of old videogames consoles (just like the [MAME hiscore plugin](https://highscore.mameworld.info)).
+# RetroHiscores
 
-Currently we have:
- - `console_hiscore.dat` file with some code entries ([contributions are welcomed](https://github.com/eadmaster/console_hiscore/wiki/Games-that-need-hiscore-codes));
- - a [Retroarch companion script](tools/retroarch_hiscore_companion.py) that loads and saves hiscores via [network commands](https://docs.libretro.com/development/retroarch/network-control-interface/) ([installation instructions](https://github.com/eadmaster/console_hiscore/wiki/RetroArch-setup)).
- - a [python script](tools/state2hi.py) to extract hiscore data from emulator savestates (with limited compatibility).
- - a MAME `console_hiscore` plugin forked from the [official one](https://github.com/mamedev/mame/tree/master/plugins/hiscore) with support for cart and cdrom images ([installation instructions](https://github.com/eadmaster/console_hiscore/wiki/MAME-plugin-installation)).
+This is a port of the [MAME hiscore plugin](https://github.com/borgar/mame-hiscores) for RetroArch.
 
-Please note that the python scripts are mostly POCs, so always keep a backup of your saves before processing them!
+It allows saving and restoring hiscores for games listed in the datfile.
+
+> [!NOTE]
+> Only games with [builtin hiscores buffering](https://github.com/eadmaster/RetroHiscores/wiki/FAQs#can-you-track-hiscores-for-all-the-games) are supported currently.
+
+
+## How to use
+
+1. Obtain a recent version of RetroArch with [Lua scripting support](https://github.com/eadmaster/RetroArch/tree/lua_scripting)
+2. copy `RetroHiscores.lua` to `~/.config/retroarch/system/autostart.lua`
+3. copy `console_hiscore.dat` to `~/.config/retroarch/system/`
+4. load a supported game, and `.hi` file will be created with the current hiscore
+
+

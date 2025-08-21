@@ -47,6 +47,7 @@ function hiscore.startplugin()
 		emu.print_verbose( "console_hiscore: config found" );
 		local _conf = {}
 		for line in io.lines(config_path) do
+		  -- TODO: skip comments
 		  token, value = string.match(line, '([^ ]+) +([^ ]+)');
 		  if token ~= nil and token ~= '' then
 			_conf[token] = value;
@@ -54,7 +55,7 @@ function hiscore.startplugin()
 		end
 		hiscore_path = lfs.env_replace(_conf["hi_path"] or hiscore_path);
 		timed_save = _conf["only_save_at_exit"] ~= "1"
-		-- hiscoredata_path = _conf["dat_path"]; -- don't know if I should do it, but wathever
+		--hiscoredata_path = _conf["dat_path"]; -- load custom datfile
 		return true
 	  end
 	  return false
