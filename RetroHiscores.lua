@@ -96,36 +96,33 @@ local function read_hiscore_dat (hiscoredata_path)
   --console.log( "hiscore_plugin_path: " .. hiscore_plugin_path );
   local file = io.open( hiscore_plugin_path .. "/" .. hiscoredata_path, "r" );
   if file == nil then
-	-- file not found
-	console.log( "hiscore file not found: " .. hiscoredata_path );
-	return ""
+	-- file not found, try another path
+	file = io.open( emu.getdir() .. "/Lua/" .. hiscoredata_path, "r" );
+	if file == nil then
+	  console.log( "hiscore file not found: " .. hiscoredata_path );
+	  return ""
+	end
   end
-  local rm_match;
-  local rm_match_crc = 0;
-  --if emu.softname() ~= "" then
-	--local soft = emu.softname():match("([^:]*)$")
-	--rm_match = gameinfo.getromname() .. ',' .. soft .. ':';
-  --elseif manager:machine().images["cart"] and manager:machine().images["cart"]:filename() ~= nil then
-	--local basename = string.gsub(manager:machine().images["cart"]:filename(), ".*[\\/](.*)", "%1");
-	--local filename = string.gsub(basename, "(.*)(%..*)", "%1");   -- strip the extension (e.g. ".nes")
-	--rm_match = gameinfo.getromname() .. "," .. filename .. ':';
-	--rm_match_crc = gameinfo.getromname() .. ",crc32=" .. string.format("%x", manager:machine().images["cart"]:crc()) .. ':';
-	---- TODO: get global CRC32 for NES ROMS (returns PRG CRC32 only)
-  --elseif manager:machine().images["cdrom"] and manager:machine().images["cdrom"]:filename() ~= nil then
-	--local basename = string.gsub(manager:machine().images["cdrom"]:filename(), ".*[\\/](.*)", "%1");
-	--local filename = string.gsub(basename, "(.*)(%..*)", "%1");   -- strip the extension (e.g. ".cue")
-	--rm_match = gameinfo.getromname() .. "," .. filename .. ':';
-	----rm_match_crc = string.format("%x", manager:machine().images["cdrom"]:crc()) .. ':';  -- always 0 with cdrom media?
-  --else
-	--rm_match = gameinfo.getromname() .. ':';
-  --end
-  if emu.getsystemid() ~= "" then
-	rm_match = string.lower(emu.getsystemid()) .. "," .. gameinfo.getromname() .. ':';
-  else
-	rm_match = "nes," .. gameinfo.getromname() .. ':';
+  local rm_match = "";
+  local rm_match_hash = "";
+  
+  --local systemid = emu.getsystemid()
+  -- unreliable:
+	-- Bizhawk values: NES, GB, GBC, GG, VB, GEN, SMS, SNES, SAT, NDS, N64, GBA, PSX, PCE
+	-- Retroarch values: game_boy_advance, ...
+	-- mame system names  gameboy, genesis, http://www.progettoemma.net/mess/sysset.php
+  
+  rm_match = "," .. gameinfo.getromname() .. ':';
+  
+  local romhash = gameinfo.getromhash()
+  if string.len(romhash)==8 then  -- crc32
+      rm_match_hash = ",crc32=" .. string.lower(romhash) .. ':';
+  elseif string.len(romhash)==32 then  -- md5
+      rm_match_hash = ",md5=" .. string.lower(romhash) .. ':';
+  elseif string.len(romhash)==40 then  -- md5
+      rm_match_hash = ",sha1=" .. string.lower(romhash) .. ':';
   end
-  -- TODO: add hash: gameinfo.getromhash()
-
+  
   local cluster = "";
   local current_is_match = false;
   if file then
@@ -140,11 +137,11 @@ local function read_hiscore_dat (hiscoredata_path)
 			cluster = cluster .. "\n" .. line;
 		  end
 		--elseif line == rm_match then --- match this game (2FIX: problem with comments)
-		elseif string.sub(line,1,string.len(rm_match))==rm_match then
+		elseif string.find(line, rm_match, 2, true) then
 		  current_is_match = true;
-		elseif string.sub(line,1,string.len(rm_match_crc))==rm_match_crc then --- match this game crc
+		elseif string.find(line, rm_match_hash, 2, true) then --- match this game crc
 		  current_is_match = true;
-		elseif string.find(line, '^.+:') then --- some game
+		elseif string.find(line, '^.+:') then --- some other game
 		  if current_is_match and string.len(cluster) > 0 then
 			break; -- we're done
 		  end
@@ -154,6 +151,9 @@ local function read_hiscore_dat (hiscoredata_path)
 	  end
 	until not line;
 	file:close();
+  end
+  if not current_is_match then
+    console.log( "console_hiscore: no match found for " .. rm_match)
   end
   return cluster;
 end

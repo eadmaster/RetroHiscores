@@ -2,11 +2,7 @@
 
 This is a port of the [MAME hiscore plugin](https://github.com/borgar/mame-hiscores) for RetroArch and BizHawk.
 
-It allows saving and restoring hiscores for games listed in the datfile.
-
-> [!NOTE]
-> Only games with [builtin hiscores buffering](https://github.com/eadmaster/RetroHiscores/wiki/FAQs#can-you-track-hiscores-for-all-the-games) are supported currently.
-
+It allows saving and restoring hiscores for the games listed in the [datfile](https://github.com/eadmaster/RetroHiscores/blob/master/console_hiscore.dat).
 
 ## How to use
 
@@ -24,4 +20,4 @@ It allows saving and restoring hiscores for games listed in the datfile.
 3. copy `console_hiscore.dat` to `~/.config/retroarch/system/`
 4. load a supported game, an `.hi` file will be created with the current hiscore
 
-
+## [FAQs](https://github.com/eadmaster/RetroHiscores/wiki/FAQs)

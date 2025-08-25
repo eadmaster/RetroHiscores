@@ -32,7 +32,7 @@
 gameboy,tetris:
 gameboy,Tetris (World) (Rev A):
 gameboy,Tetris (W) (V1.1) [!]:
-gameboy,46df91ad:
+gameboy,crc32=46df91ad:
 @:maincpu,program,d654,32,0,0,ff
 
 genesis,tf3:
